@@ -4,6 +4,9 @@ Project undertaken by Gen Tolhurst (gen.tolhurst@unimelb.edu.au) under the super
 Research is undertaken at The School of Geography, Earth and Atmospheric Sciences (SGEAS) at The University of Melbourne.
 Project duration from August 2025 to February 2026.
 
+<img width="2013" height="3420" alt="flow_chart_pic" src="https://github.com/user-attachments/assets/e336accd-4125-4981-b406-658ce61d008a" />
+
+
 ## Module for calculating indices
 cat_indices.py
 
