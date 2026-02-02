@@ -155,19 +155,19 @@ def turbulence_index_1(ds, u="u", v="v", z="z", p0=p0, p1=p1, lon="lon", lat="la
     """Ellrod1 index = VWS*DEF """
     return VWS(ds, u=u, v=v, z=z, p0=p0, p1=p1) * DEF(ds, u=u, v=v, lon=lon, lat=lat, p=p, x=x, y=y)
 TI1 = turbulence_index_1
-elllrod1 = turbulence_index_1
+ellrod1 = turbulence_index_1
 
 def turbulence_index_2(ds, u="u", v="v", z="z", p0=p0, p1=p1, lon="lon", lat="lat", p=P, x= step_size, y= step_size):
     """Ellrod2 index = VWS*(DEF-DIV)"""
     return VWS(ds, u=u, v=v, z=z, p0=p0, p1=p1) * (DEF(ds, u=u, v=v, lon=lon, lat=lat, p=p, x=x, y=y) - DIV(ds, u=u, v=v, lon=lon, lat=lat, p=p, x= x, y= y))
 TI2 = turbulence_index_2
-elllrod2 = turbulence_index_2
+ellrod2 = turbulence_index_2
     
 def turbulence_index_3(ds, u="u", v="v", z="z", p0=p0, p1=p1, lon="lon", lat="lat", p=P, x= step_size, y= step_size):
     """Ellrod3 index - VWS * DEF + DVT"""
     return VWS(ds, u=u, v=v, z=z, p0=p0, p1=p1) * DEF(ds, u=u, v=v, lon=lon, lat=lat, p=p, x=x, y=y) + DVT(ds, u=u, v=v, lon=lon, lat=lat, p=p, x= x, y= y)
 TI3 = turbulence_index_3
-elllrod3 = turbulence_index_3
+ellrod3 = turbulence_index_3
 
 
 # calculate all turbulence indices   
@@ -221,6 +221,6 @@ def calc_turbulence_indices(
         func, kwargs = index_map[which]
         ds[which] = func(ds, **kwargs)
     else:
-        raise ValueError(f"Unknown index: {which}")
+        raise ValueError(f"Unknown index: {which}. Use one of ['windspeed', 'VWS', 'N2', 'PV', 'DEF', 'DIV', 'DVT', 'Ri', 'TI1', 'TI2', 'TI3']")
 
     return ds
