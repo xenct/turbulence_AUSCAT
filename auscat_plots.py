@@ -2145,10 +2145,7 @@ def plot_acs_hazard(
 
     if savefig:
         plt.savefig(outfile, dpi=300,)
-    return fig, ax
-
-
-    
+    return fig, ax  
 
 def plot_acs_hazard_1plus3(
                 regions=None,
