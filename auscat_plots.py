@@ -1262,7 +1262,7 @@ def plot_acs_hazard_multi(
     Parameters
     ----------     
     regions: geopandas.GeoDataFrame or list
-        if None, then will try to read from regions_dict['ncra_regions'].
+        if None, then will try to read from regions_dict['aus_states_territories'].
 
     ds_list: list of xr.DataArray, optional
         The list of DataArrays to plot.
@@ -1565,7 +1565,7 @@ def plot_acs_hazard_multi(
                "watermark": (0.45, 0.41),}
     
     if regions is None:
-        regions = regions_dict['ncra_regions']
+        regions = regions_dict['aus_states_territories']
 
     # Set default projection for Australia maps and selection maps
     if projection is None:
@@ -1765,7 +1765,7 @@ def plot_acs_hazard_multi(
 # # Define a function for plotting maps
 # This is the function you call to plot all the graphs
 def plot_acs_hazard(
-    name='ncra_regions',
+    name='aus_states_territories',
     regions=None,
     data=None,
     station_df=None,
@@ -2600,7 +2600,7 @@ def plot_acs_hazard_1plus3(
         gwl12_tick_rotation = tick_rotation
     
     if regions is None:
-        regions = regions_dict['ncra_regions']
+        regions = regions_dict['aus_states_territories']
 
     # Set default projection for Australia maps and selection maps
     if projection is None:
@@ -2848,7 +2848,8 @@ def plot_timeseries(ds_resampled,
                                                       for run in significance_list]
         ds_resampled = ds_resampled.sel(run = ds_ts["run"].isin(run_list))  
     else:
-        print(f"using {list_historical}")
+        pass
+        # print(f"using {list_historical}")
 
     
     y=turbulence_index
@@ -2864,7 +2865,8 @@ def plot_timeseries(ds_resampled,
         ax=plt.gca()
     else:
         ax = ax
-    sns.lineplot(df, x="time", y=y, hue="experiment", 
+    sns.lineplot(df, x="time", y=y, estimator=np.median,
+                 hue="experiment", 
                  errorbar=('pi', pi), palette=ssp_colors, ax=ax, legend=legend)
     ax.set_title(title)
     plt.ylim((0, ymax))
@@ -2925,15 +2927,12 @@ def plot_futures(time_selection="annual",
         run_list = list_historical
         
     # get the list of files we need
-    glob_list = glob(f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/\
-{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_*_BOM_BARPA-R_v1-r1_6hr.nc")
+    glob_list = glob(f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_*_BOM_BARPA-R_v1-r1_6hr.nc")
 
     # historical
-    desired_list = [f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/\
-{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_{run}_BOM_BARPA-R_v1-r1_6hr.nc" 
-                                for run in run_list]
+    desired_list = [f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_{run}_BOM_BARPA-R_v1-r1_6hr.nc" for run in run_list]
     filelist = [f for f in desired_list if f in glob_list]
-
+    
     def _preprocess(ds):
         ds = ds.sel({"lon":lon_slice,})
         ds = select_resample_time(ds, time_selection)
@@ -2964,7 +2963,8 @@ def plot_futures(time_selection="annual",
 
     # combine
     common_runs = [f for f in list(set(ds_hist["run"].values)) if f in set(ds_future["run"].values)]
-    print(f" These are the common runs used for {experiment}: {common_runs}")
+    if significance_tested:
+        print(f" These are the common runs used for {experiment}: {common_runs}")
 
     # create a continuous time series by combining historical and future experiements
     ds = xr.concat((ds_hist.sel({"run":common_runs,}),
@@ -3000,7 +3000,7 @@ def plot_futures(time_selection="annual",
         # IE all models agree on the sign
         agree_mask = ((mf_delta > 0).sum("run") >= agreement_threshold) + ((mf_delta < 0).sum("run") >= agreement_threshold)
         # coarsen for stippling density
-        agree_mask = (agree_mask.coarsen(lat=20, lon=20, boundary="pad").mean() > 0.4)
+        agree_mask = (agree_mask.coarsen(lat=16, lon=16, boundary="pad").mean() > 0.4)
         agreement_list.append(agree_mask)
 
     fig, axs = plot_acs_hazard_multi(nrows=len(time_slices), 
@@ -3035,7 +3035,7 @@ def plot_futures(time_selection="annual",
         print(f"Saved {outfile}")
     if zonal_plots:
         # zonal mean values
-        fig1, axs1 = plt.subplots(len(time_slices),1, figsize=(3,7), sharex=True)
+        fig1, axs1 = plt.subplots(len(time_slices)+1,1, figsize=(3,7), sharex="all")
         
         hue_order = common_runs
         palette = {run: sns.color_palette("colorblind", 8)[i] for i, run in enumerate(common_runs)}
@@ -3051,7 +3051,7 @@ def plot_futures(time_selection="annual",
         
         plt.xlim((0,None))
         plt.tight_layout()
-        axs1[i].legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), )
+        axs1[i+1].legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), )
         if save_fig:
             path, filetype = outfile.split(".")
             plt.savefig(f"{path}_zonal-means.{filetype}")
@@ -3186,7 +3186,7 @@ def plot_timeseries_coolwarmseason(ds_ts, turbulence_index, P, window_size, ymax
     # cool season v warm season
     outfile = f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/Timeseries_{turbulence_index}_{P}hPa_Frequency_of_exceeding_p99_over_time_6Mseason_rolling{window_size}y.png"
     
-    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True, sharey=True, figsize=(8,4))
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex="all", sharey="all", figsize=(8,4))
     for i, time_selection in enumerate(["MJJASO", "NDJFMA"]):
         ds_resampled = select_resample_time(ds_ts, time_selection)
     
@@ -3217,7 +3217,7 @@ def plot_timeseries_season(ds_ts, turbulence_index, P, window_size, ymax=None):
     ncols=2
     nrows=2
     
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(8,8))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex="all", sharey="all", figsize=(8,8))
     
     for i, time_selection in enumerate(["DJF", "MAM", "JJA", "SON"]):
         print(time_selection)    
@@ -3252,7 +3252,7 @@ Timeseries_{turbulence_index}_{P}hPa_Frequency_of_exceeding_p99_over_time_month_
     
     ncols = 3
     nrows = 4
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(10,12))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex="all", sharey="all", figsize=(10,12))
     
     for i, month_number in enumerate(np.arange(1,12+1)):
         time_selection = calendar.month_name[month_number]
@@ -3290,7 +3290,7 @@ def plot_baseline_ann(ds_eval, turbulence_index, P, ticks_max=None):
                                      ds_list=ds_list,
                                      mask_not_australia=False,
                                      ticks=np.arange(0.00, ticks_max, 0.005),
-                                     tick_interval=4,
+                                     tick_interval=2,
                                      cbar_extend="max",
                                      cbar_label=f"frequency of exceeding p99 {turbulence_index} [6h frequency]",
                                      figsize=(6, 6),
@@ -3396,7 +3396,7 @@ def plot_baseline_months(ds_eval, turbulence_index, P, ticks_max=None):
                                   tick_interval=2,
                                   cbar_extend="max",
                                   cbar_label=f"frequency of exceeding p99 {turbulence_index} [6h frequency]",
-                                  figsize=(8, 8),
+                                  figsize=(8, 10),
                                   title=f"frequency of exceeding p99 {turbulence_index} {P}hPa",
                                   date_range="1990 to 2009",
                                   subplot_titles=[calendar.month_name[time_selection] for time_selection in np.arange(1,12+1)],
@@ -3413,7 +3413,187 @@ def plot_baseline_months(ds_eval, turbulence_index, P, ticks_max=None):
     return fig, axs 
 
 
+def plot_futures_1plus3(time_selection="annual",
+                         turbulence_index=None,
+                         P=None,
+                         time_slices = None, 
+                         experiment="ssp370", 
+                         all_agree_except=0,
+                         figsize=(6,9),
+                         save_fig=True,
+                         outfile=None,
+                         significance_tested=False,
+                         ticks_max=0.020):
+    
+    """
+    Plot future change maps and zonal means for the p99 frequency metric.
+    Change is calculated from the historical baseline period per model. 
+    BARRA-R evaluation is not used in these calculations
 
+    Parameters
+    ----------
+    time_selection : str
+        e.g., 	time_selection: [annual, MJJASO, NDJFMA, DJF, MAM, JJA, SON, January, February, March,
+        April, May, June, July, August, September, October, November, December]
+    turbulence_index: str
+        turbulence index, one of "windspeed"m "VWS", "TI1"
+    P :
+        pressure level for index. eg 200 or 250
+    time_slices : list[tuple[str,str]]
+        List of (start_year, end_year) pairs.
+    experiment : str
+        e.g., 'ssp370'
+    all_agree_except : int
+        Number of runs allowed to disagree with the majority sign for hatching. Indicates robust signal across models
+    save_fig : bool
+        If True, saves the map figure.
+    significance_tested : bool
+        If True, restrict runs to those which pass at least one significance test. Determined by eg "**" 
+    ticks_max: float
+        limit for colorscale for anomalies
+
+    Returns
+    -------
+    fig, axs
+    """
+    if significance_tested:  
+        combined_significance_table_file= (f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/evaluation_combined_tests_table_{turbulence_index}-{P}hPa.csv")
+        evaluation_combined = pd.read_csv(combined_significance_table_file)
+        # runs that pass at least one test
+        run_list = list(evaluation_combined[(evaluation_combined["time_selection"]==time_selection) 
+                                 & (evaluation_combined["combined_significance"].isin(["", "*", "**", "***",]))]["sample2"])
+    else:
+        # use all available
+        run_list = list_historical
+        
+    # get the list of files we need
+    glob_list = glob(f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_*_BOM_BARPA-R_v1-r1_6hr.nc")
+
+    # historical
+    desired_list = [f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_{run}_BOM_BARPA-R_v1-r1_6hr.nc" for run in run_list]
+    filelist = [f for f in desired_list if f in glob_list]
+    
+    def _preprocess(ds):
+        ds = ds.sel({"lon":lon_slice,})
+        ds = select_resample_time(ds, time_selection)
+        return ds
+ 
+    ds_hist = xr.open_mfdataset(filelist,
+                          concat_dim="run",
+                          combine="nested",
+                          preprocess= _preprocess,
+                          chunks={"lat":160,"lon":-1},
+                          )
+    ds_hist["run"] = [run[run.index("_")+1:] for run in ds_hist["run"].values] 
+    
+    #future
+    future_list =  [experiment + run[10:] for run in run_list]
+    desired_list = [f"/scratch/v46/gt3409/{turbulence_index}/{P}hPa/freq-above-p99/\
+{turbulence_index}-{P}hPa-monthly-freq-above-p99_AUS-15_{run}_BOM_BARPA-R_v1-r1_6hr.nc" 
+                                for run in future_list]
+    filelist = [f for f in desired_list if f in glob_list]
+
+    ds_future = xr.open_mfdataset(filelist,
+                          concat_dim="run",
+                          combine="nested",
+                          preprocess= _preprocess,
+                                  chunks={"lat":160,"lon":-1},
+                          )
+    ds_future["run"] = [run[run.index("_")+1:] for run in ds_future["run"].values] 
+
+    # combine
+    common_runs = [f for f in list(set(ds_hist["run"].values)) if f in set(ds_future["run"].values)]
+    if significance_tested:
+        print(f" These are the common runs used for {experiment}: {common_runs}")
+
+    # create a continuous time series by combining historical and future experiments
+    ds = xr.concat((ds_hist.sel({"run":common_runs,}),
+                    ds_future.sel({"run":common_runs,})), 
+                   coords="minimal", dim="time", join="outer",
+                   compat="override",
+                  ).chunk({"run":1, "time":-1,})
+    
+    # baseline relative to the same model's historical period 
+    baseline = ds[turbulence_index].sel({"time":baseline_time_slice}).mean("time")
+    
+    # stippling for agreement
+    agreement_threshold = len(common_runs) - all_agree_except
+
+    # compute per-slice means and agreement masks
+    mean_futures = [ds[turbulence_index].sel(time=slice(start, end)).mean("time") 
+                    for (start, end) in time_slices[1:]]
+
+    # sign agreement: either majority positive or majority negative relative to baseline
+    agreement_list = []    
+    # median across runs of the change
+    ds_list = []
+    for mf in mean_futures:
+        # calculate the change from baseline period per model (relative to own model's historical baseline)
+        mf_delta = (mf - baseline)
+        # median value to map
+        ds_list.append(mf_delta.mean("run"))
+
+        # for stippling: check if all models agree on sign of change (or all minus "all_agree_except")
+        # mapped bool for if all models (or nearly all set by "all_agree_except") show positive changes
+        # OR
+        # mapped bool for if all models (or nearly all set by "all_agree_except") show negative changes
+        # IE all models agree on the sign
+        agree_mask = ((mf_delta > 0).sum("run") >= agreement_threshold) + ((mf_delta < 0).sum("run") >= agreement_threshold)
+        # coarsen for stippling density
+        agree_mask = (agree_mask.coarsen(lat=16, lon=16, boundary="pad").mean() > 0.4)
+        agreement_list.append(agree_mask)
+
+    ds_1, ds_2, ds_3 = ds_list
+    ds_baseline = baseline.mean("run")
+    stippling_1, stippling_2, stippling_3 = agreement_list
+    
+    plot_acs_hazard_1plus3(
+                ds_gwl12=ds_baseline,
+                gwl12_cmap=cmap_dict["ipcc_wind_seq"],
+                gwl12_cbar_extend="both",
+                gwl12_cbar_label="frequency [per 6h]",
+                gwl12_ticks=np.arange(0, 0.081, 0.005),
+                gwl12_tick_interval=4,
+                gwl12_tick_rotation =0,
+                ds_gwl15=ds_1,
+                ds_gwl20=ds_2,
+                ds_gwl30=ds_3,                      
+                stippling_gwl15=stippling_1,
+                stippling_gwl20=stippling_2,
+                stippling_gwl30=stippling_3,
+                mask_australia=False,
+                mask_not_australia=False,
+                ticks=np.arange(-1*ticks_max, ticks_max*1.0001, 0.002),
+                tick_rotation =0,
+                vcentre=0,
+                tick_interval=4,
+                cbar_label=f"change in frequency [per 6h]",
+                figsize=figsize,
+                title=f"Change in {time_selection} frequency of exceeding p99 {turbulence_index} {P}hPa",
+                date_range=f"{experiment}",
+                subplot_titles=[f"{start_year} to {end_year}" for start_year, end_year in time_slices],
+                subtitle_xy = None,
+                area_linewidth=0.3,
+                xlim=(90, 195),
+                ylim=(-53.58 , 13.63),
+                coastlines=True,
+                projection=ccrs.PlateCarree(130),
+                cmap=cmap_dict["anom"],
+                watermark="",
+                show_copyright=False,
+                baseline= "1990 to 2009",
+                cbar_extend="both",
+                dataset_name="BARPA-R",
+                issued_date=None,
+                outfile=None,
+                orientation="vertical",
+                )
+    if save_fig:
+        if outfile is None:
+            outfile = f"Change in {time_selection} frequency of exceeding p99 {turbulence_index} {P}hPa {experiment}.png".replace(" ", "_")
+        plt.savefig(outfile)
+        print(f"Saved {outfile}")
+    return
 
 
 
