@@ -45,3 +45,6 @@ contains formulas used for calculating indices
 ## Small sample of BARPA data to test index calculations
 (sample_BARPA-R_data.ipynb for a small time slice of many layers to test indices calculations)
 We compare our index calculations in compare_CAT_indices_using_BARRA-R_sample.ipynb
+
+# Ideas To Do
+can be found under [issues](https://github.com/xenct/turbulence_AUSCAT/issues/1)
