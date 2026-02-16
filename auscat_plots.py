@@ -682,7 +682,7 @@ def plot_data(regions=None,
                     stippling.lat,
                     stippling,
                     alpha=0,
-                    hatches = ["","xxxxxx"],
+                    hatches = ["","xxxxx"],
                     zorder=4,
                     transform=ccrs.PlateCarree(),
                    )
@@ -1278,7 +1278,7 @@ def plot_acs_hazard_multi(
         
     stippling_list: list of xr.DataArray, optional
         A list of True/False masks to define regions of stippling hatching 
-        for each subplot. ["xxxxxx"]
+        for each subplot. ["xxxxx"]
         Intended to show model agreement, eg for the direction of change.
 
     shading_list: list of xr.DataArray, optional
@@ -3043,44 +3043,17 @@ def plot_futures(time_selection="annual",
                          hue = "run", hue_order= hue_order, palette=palette,
                          orient="y", ax=axs1[i],
                         )
+            handles, labels = axs1[i].get_legend_handles_labels()
             axs1[i].legend_.remove()
             axs1[i].grid(True)
-        
+        axs1[i+1].axis('off')
         plt.xlim((0,None))
         plt.tight_layout()
-        axs1[i+1].legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), )
+        axs1[i].legend(handles=handles, labels=labels,  loc="upper center", bbox_to_anchor=(0.5, -0.15), )
         if save_fig:
             path, filetype = outfile.split(".")
             plt.savefig(f"{path}_zonal-means.{filetype}")
 
-    # if True:
-    #     # zonal mean values
-    #     fig2, axs2 = plt.subplots(len(time_slices),1, figsize=(3,7), sharex=True)
-    #     df_baseline = baseline.mean(["run", "lon"])\
-    #                           .expand_dims({"run":["baseline"]})\
-    #                           .to_dataframe()
-    #     i=0
-    #     for start_year, end_year in time_slices:
-    #         df = ds_ann.sel({"time":slice(start_year, end_year)}).mean(["time","lon"]).to_dataframe()
-    #         df_zonal = pd.concat([df, df_baseline])
-    
-    #         hue_order = common_runs + ["baseline"]
-    #         palette = {run: "grey" for i, run in enumerate(common_runs)}
-    #         palette["baseline"] = "red"
-            
-    #         sns.lineplot(data = df_zonal, 
-    #                      x = turbulence_index, y ="lat", 
-    #                      hue = "run", orient="y", ax=axs2[i],
-    #                      palette=palette,
-    #                     )
-    #         axs2[i].legend("")
-    #         axs2[i].grid()
-    #         i+=1
-        
-    #     # plt.xticks(np.arange(0,0.05, 0.01))
-    #     plt.xlim((0,None))
-    #     plt.tight_layout()
-    #     axs2[i-1].legend(loc="upper center",bbox_to_anchor=(0.5, -0.25)
     return fig, axs
     
 def evaluate_model_map(ds_baseline_mapped, turbulence_index, P, ticks_max=0.08):
@@ -3420,7 +3393,8 @@ def plot_futures_1plus3(time_selection="annual",
                          save_fig=True,
                          outfile=None,
                          significance_tested=False,
-                         ticks_max=0.020):
+                         ticks_max=0.020,
+                        baseline_time_slice = baseline_time_slice):
     
     """
     Plot future change maps and zonal means for the p99 frequency metric.
@@ -3509,7 +3483,7 @@ def plot_futures_1plus3(time_selection="annual",
                    coords="minimal", dim="time", join="outer",
                    compat="override",
                   ).chunk({"run":1, "time":-1,})
-    
+
     # baseline relative to the same model's historical period 
     baseline = ds[turbulence_index].sel({"time":baseline_time_slice}).mean("time")
     
@@ -3549,7 +3523,7 @@ def plot_futures_1plus3(time_selection="annual",
                 gwl12_cmap=cmap_dict["ipcc_wind_seq"],
                 gwl12_cbar_extend="both",
                 gwl12_cbar_label="frequency [per 6h]",
-                gwl12_ticks=np.arange(0, 0.081, 0.005),
+                gwl12_ticks=np.arange(0, 0.071, 0.005),
                 gwl12_tick_interval=4,
                 gwl12_tick_rotation =0,
                 ds_gwl15=ds_1,
